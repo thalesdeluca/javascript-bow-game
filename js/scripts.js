@@ -153,42 +153,48 @@ function shootArrow(force) {
     target8 = new Target(10, canvas.height / 6, canvas.width - 20, canvas.height / 2.4, "yellow");
     target10 = new Target(10, canvas.height / 15, canvas.width - 20, canvas.height / 2.15, "red");
 
-    checkCollision(target10, target8, target6, target4);
+    let collided = checkCollision(target10.x);
 
-  }, 16);
-}
-function checkCollision(...targets){
-  if(arrow.x + arrow.width >= targets[0].x){
-    for(let target of targets){
-      if(target.y <= arrow.y + arrow.height && target.y + target.height >= arrow.y + arrow.height){
-        console.log(target);
-        switch (target) {
-          case target10:
-            points += 10;
-            break;
-          case target8:
-            points += 8;
-            break;
-          case target6:
-            points += 6;
-            break;
-          case target4:
-            points += 4;
-            break;
-        }
-      }
-      pointsLabel.innerText = "Points: " + points;
+    if(collided) {
       clearInterval(arrowMovement);
       arrowState = 0;
       arrowMovement = null;
-      reset();
-      return true;
+      reset(target10, target8, target6, target4);
     }
+
+  }, 20);
+}
+/* */ 
+function checkCollision(target){
+  if(arrow.y + arrow.height >= canvas.height){
+    return true;
+  } else if(arrow.x + arrow.width >= target){  
+      return true;
+  } else{
     return false;
   }
 }
+function countPoints(targets){
+  for(let target of targets){
+    if(target.y <= arrow.y + Math.abs(arrow.angle) && target.y + target.height > arrow.y + Math.abs(arrow.angle)){
+      switch (target) {
+        case target10:
+          return 10;
+        case target8:
+          return 8;
+        case target6:
+          return 6;
+        case target4:
+          return 4;
+      }
+    }
+  }
+}
 
-function reset(){
+
+function reset(...targets){
+  points += countPoints(targets);
+  pointsLabel.innerText = "Points: " + points;
   bow = new Bow(60, canvas.height / 2, canvas.height / 25);
   arrow = new Arrow(60, canvas.height / 2 , 60, 2);
   gravity = (Math.random() * (10 - 3)) + 3;
