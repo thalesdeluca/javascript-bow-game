@@ -29,6 +29,7 @@ window.onload = () => {
   pointsLabel = document.getElementById("points");
 }
 
+//Objects----------------------------------------------------------
 //args order = width, height, x, y, color
 function Target(...args){
   this.width = args[0];
@@ -102,8 +103,9 @@ function Arrow(x, y, width, height, angle = 0){
   context.fillRect(x, y, width, height);
   requestAnimationFrame(Arrow);
 }
+//------------------------------------------------------
 
-//Events
+//Events-------------------------------------------------
 canvas.addEventListener("mousemove", (e) => {
   if(arrowState == 0){
     mouseY = e.clientY;
@@ -135,6 +137,7 @@ document.addEventListener("keyup", (e) => {
     }
   }
 });
+//---------------------------------------------
 
 
 
@@ -146,7 +149,7 @@ function shootArrow(force) {
     let previousAngle = arrow.angle;
     context.clearRect(arrow.x - 10, arrow.y  - 100 , arrow.x + arrow.width + 1, arrow.y + 100);
     arrow = new Arrow(arrow.x + speed, arrow.y + (previousAngle / 15) * gravity, arrow.width, arrow.height);
-    arrow.rotate(previousAngle + 10 / (gravity));
+    arrow.rotate(previousAngle + 10 / (gravity *2));
 
     target4 = new Target(10, canvas.height / 2 , canvas.width - 20, canvas.height / 4, "black");
     target6 = new Target(10, canvas.height / 3, canvas.width - 20, canvas.height / 3, "blue");
@@ -164,7 +167,7 @@ function shootArrow(force) {
 
   }, 20);
 }
-/* */ 
+
 function checkCollision(target){
   if(arrow.y + arrow.height >= canvas.height){
     return true;
@@ -189,11 +192,13 @@ function countPoints(targets){
       }
     }
   }
+  return 0;
 }
 
 
 function reset(...targets){
   points += countPoints(targets);
+  console.log(countPoints(targets));
   pointsLabel.innerText = "Points: " + points;
   bow = new Bow(60, canvas.height / 2, canvas.height / 25);
   arrow = new Arrow(60, canvas.height / 2 , 60, 2);
