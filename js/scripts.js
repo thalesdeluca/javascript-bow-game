@@ -2,16 +2,32 @@ var canvas = document.getElementById("area");
 var context = canvas.getContext("2d");
 var mouseX = 0;
 var mouseY = 0;
-var gravity = 10;
+var gravity = 4;
+var clickDuration = 1;
+var points = 0;
+var arrowState = 0; // 0 - not moving /    1 - Moving
+let timer = null;
 canvas.height = window.innerHeight;
-canvas.width = window.innerWidth;
+canvas.width = 920;
 
+let gravityLabel;
+let pointsLabel;
+
+let arrowMovement;
 let target4 = new Target(10, canvas.height / 2 , canvas.width - 20, canvas.height / 4, "black");
 let target6 = new Target(10, canvas.height / 3, canvas.width - 20, canvas.height / 3, "blue");
 let target8 = new Target(10, canvas.height / 6, canvas.width - 20, canvas.height / 2.4, "yellow");
 let target10 = new Target(10, canvas.height / 15, canvas.width - 20, canvas.height / 2.15, "red");
 
 let bow = new Bow(60, canvas.height / 2, canvas.height / 25);
+let arrow = new Arrow(60, canvas.height / 2 , 60, 2);
+
+window.onload = () => {
+  gravityLabel = document.getElementById("gravity");
+  gravityLabel.innerText = "Gravity: " + gravity;
+
+  pointsLabel = document.getElementById("points");
+}
 
 //args order = width, height, x, y, color
 function Target(...args){
@@ -23,7 +39,6 @@ function Target(...args){
   context = context;
   context.fillStyle = args[4];
   context.fillRect(this.x, this.y, this.width, this.height);
-  console.log(this);
 }
 
 function Bow(x, y, radius) {
@@ -35,9 +50,6 @@ function Bow(x, y, radius) {
     
     context.translate(x+30, y+2);
     context.rotate(degrees * Math.PI/180);
-
-    context.fillStyle = "black";
-    context.fillRect(-30, -1, 60, 2);
 
     context.beginPath();
     context.arc(-20, 0, radius, -Math.PI/2, Math.PI/2);
@@ -51,9 +63,6 @@ function Bow(x, y, radius) {
     context.restore();
   }
 
-  context.fillStyle = "black";
-  context.fillRect(x, y, 60, 2);
-
   context.beginPath();
   context.arc(x, y, radius, -Math.PI/2, Math.PI/2);
   context.stroke();
@@ -66,16 +75,123 @@ function Bow(x, y, radius) {
   requestAnimationFrame(Bow);
 }
 
+function Arrow(x, y, width, height, angle = 0){
+  this.x = x;
+  this.y = y;
+  this.width = width;
+  this.height = height;
+  this.angle = angle;
+
+  this.rotate = (degrees) => {
+    this.angle = degrees;
+    if(arrowState == 1){
+      context.clearRect(x - 10, y  - 100 , x + width + 1, y + 100);
+    }
+    context.save();
+    context.translate(x + 30, y + 2);
+    context.rotate(degrees * Math.PI / 180);
+    //-30, -1, 60, 2, 
+
+    context.fillStyle = "black";
+    context.fillRect(-30, -1, width, height);
+
+    context.restore();
+  }
+  context.rotate(angle * Math.PI / 180);
+  context.fillStyle = "black";
+  context.fillRect(x, y, width, height);
+  requestAnimationFrame(Arrow);
+}
+
 //Events
 canvas.addEventListener("mousemove", (e) => {
-  mouseY = e.clientY;
-  mouseX = e.clientX;
-  bow.rotate(((canvas.height/2 - mouseY) * (-90) / canvas.height));
+  if(arrowState == 0){
+    mouseY = e.clientY;
+    mouseX = e.clientX;
+    let degrees = ((canvas.height/2 - mouseY) * (-90) / canvas.height);
+    bow.rotate(degrees);
+    arrow.rotate(degrees);
+  }
 }, false);
 
 
+document.addEventListener("keydown", (e) => {
+  if(arrowState == 0){
+    if(e.code == "Space"){
+      timer = setTimeout(() => {
+        clickDuration += 100;
+      }, 100);
+    }
+  }
+});
 
-canvas.addEventListener("mousedown", (e) => {
+document.addEventListener("keyup", (e) => {
+  if(arrowState == 0){
+    if(e.code == "Space"){
+      clearTimeout(timer);
+      shootArrow(clickDuration);
+      clickDuration = 1;
+      timer = null;
+    }
+  }
+});
 
-})
+
+
+function shootArrow(force) {
+  arrowState = 1;
+  force  = force >= 4000 ? 4000 : force;
+  arrowMovement = setInterval(() =>{
+    let speed = force / 100;
+    let previousAngle = arrow.angle;
+    context.clearRect(arrow.x - 10, arrow.y  - 100 , arrow.x + arrow.width + 1, arrow.y + 100);
+    arrow = new Arrow(arrow.x + speed, arrow.y + (previousAngle / 15) * gravity, arrow.width, arrow.height);
+    arrow.rotate(previousAngle + 10 / (gravity));
+
+    target4 = new Target(10, canvas.height / 2 , canvas.width - 20, canvas.height / 4, "black");
+    target6 = new Target(10, canvas.height / 3, canvas.width - 20, canvas.height / 3, "blue");
+    target8 = new Target(10, canvas.height / 6, canvas.width - 20, canvas.height / 2.4, "yellow");
+    target10 = new Target(10, canvas.height / 15, canvas.width - 20, canvas.height / 2.15, "red");
+
+    checkCollision(target10, target8, target6, target4);
+
+  }, 16);
+}
+function checkCollision(...targets){
+  if(arrow.x + arrow.width >= targets[0].x){
+    for(let target of targets){
+      if(target.y <= arrow.y + arrow.height && target.y + target.height >= arrow.y + arrow.height){
+        console.log(target);
+        switch (target) {
+          case target10:
+            points += 10;
+            break;
+          case target8:
+            points += 8;
+            break;
+          case target6:
+            points += 6;
+            break;
+          case target4:
+            points += 4;
+            break;
+        }
+      }
+      pointsLabel.innerText = "Points: " + points;
+      clearInterval(arrowMovement);
+      arrowState = 0;
+      arrowMovement = null;
+      reset();
+      return true;
+    }
+    return false;
+  }
+}
+
+function reset(){
+  bow = new Bow(60, canvas.height / 2, canvas.height / 25);
+  arrow = new Arrow(60, canvas.height / 2 , 60, 2);
+  gravity = (Math.random() * (10 - 3)) + 3;
+  gravityLabel.innerText = "Gravity: " + Math.floor(gravity);
+}
 

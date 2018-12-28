@@ -2,7 +2,14 @@
   margin: 0 ;
   padding: 0;
   box-sizing: border-box;
+  font-family: 'Thasadith', sans-serif;
 }
 #area {
   background: #eee;
+  float: left;
+  box-shadow: 4px 4px 8px rgba(0, 0, 0, 0.4);
+}
+#scoreboard {
+  padding: 10px;
+  float: right;
 }
